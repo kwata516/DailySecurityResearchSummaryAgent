@@ -1,0 +1,130 @@
+openapi: 3.0.0
+info:
+  title: RSS2JSON Feed Converter API
+  description: >-
+    Converts any RSS/Atom feed to structured JSON via the rss2json.com service.
+    Used by DailySecurityResearchSummaryAgent to fetch security researcher blog/news feeds.
+  version: "1.0"
+servers:
+  - url: https://api.rss2json.com/v1
+paths:
+  /api.json:
+    get:
+      operationId: FetchRSSFeed
+      summary: Fetch and convert an RSS or Atom feed to JSON
+      description: |
+        Fetches the specified RSS/Atom feed URL and returns its entries as structured JSON.
+        Pass the full public URL of the target RSS feed as rss_url.
+        The response includes a list of items with title, pubDate, link, and description.
+        pubDate format is "YYYY-MM-DD HH:mm:ss" — filter by date prefix to extract today's entries.
+        #ExamplePrompts Fetch the latest items from the CISA US-CERT alerts RSS feed
+        #ExamplePrompts Get the latest 20 items from the Krebs on Security RSS feed
+        #ExamplePrompts Fetch the Dark Reading RSS feed and return today's articles
+      parameters:
+        - in: query
+          name: rss_url
+          schema:
+            type: string
+          required: true
+          description: >-
+            Full URL of the RSS or Atom feed to fetch.
+            Example: https://krebsonsecurity.com/feed/
+        - in: query
+          name: count
+          schema:
+            type: integer
+            default: 20
+            minimum: 1
+            maximum: 50
+          required: false
+          description: >-
+            Number of feed items to return (default: 20, max: 50 on free tier).
+            Use 20 or more to ensure today's articles are included for high-volume feeds.
+        - in: query
+          name: api_key
+          schema:
+            type: string
+            default: ""
+          required: false
+          description: >-
+            Optional rss2json.com API key for higher rate limits and more items per request.
+            Leave empty to use the free tier (sufficient for ~10,000 requests/month).
+      responses:
+        "200":
+          description: RSS feed parsed and returned successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    description: '"ok" on success, "error" on failure'
+                  feed:
+                    type: object
+                    description: Metadata about the RSS feed itself
+                    properties:
+                      url:
+                        type: string
+                        description: The original RSS feed URL
+                      title:
+                        type: string
+                        description: Feed title
+                      link:
+                        type: string
+                        description: Feed website link
+                      description:
+                        type: string
+                        description: Feed description
+                      image:
+                        type: string
+                        description: Feed image URL (if any)
+                  items:
+                    type: array
+                    description: List of feed entries
+                    items:
+                      type: object
+                      properties:
+                        title:
+                          type: string
+                          description: Article title
+                        pubDate:
+                          type: string
+                          description: >-
+                            Publication date in "YYYY-MM-DD HH:mm:ss" format (UTC).
+                            Filter entries where pubDate starts with today's date (YYYY-MM-DD).
+                        link:
+                          type: string
+                          description: URL of the full article
+                        guid:
+                          type: string
+                          description: Unique identifier for the entry
+                        author:
+                          type: string
+                          description: Author name (if provided by the feed)
+                        thumbnail:
+                          type: string
+                          description: Thumbnail image URL (if any)
+                        description:
+                          type: string
+                          description: Short summary or excerpt of the article (may contain HTML)
+                        content:
+                          type: string
+                          description: Full article content (may contain HTML; may be empty for some feeds)
+                        categories:
+                          type: array
+                          description: List of category tags for this article
+                          items:
+                            type: string
+        "422":
+          description: Feed URL is invalid or could not be parsed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: error
+                  message:
+                    type: string

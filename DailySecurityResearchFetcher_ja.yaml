@@ -1,0 +1,32 @@
+Descriptor:
+  Name: DailySecurityResearchFetcher
+  DisplayName: Daily Security Research Fetcher
+  Description: >-
+    セキュリティリサーチャサイトからデータを取得するスキル群。
+    RSS フィードを rss2json.com 経由で JSON に変換するスキル（FetchRSSFeed）と、
+    CISA Known Exploited Vulnerabilities カタログを直接取得するスキル（FetchCISAKEV）、
+    NIST NVD から当日公開 CVE を取得するスキル（FetchTodaysNVDCVEs）を提供します。
+  SupportedAuthTypes:
+    - None
+
+# ============================================================
+# ⚠️  インストール前の必須作業: OpenApiSpecUrl の差し替え
+# ------------------------------------------------------------
+# 各 SkillGroup の OpenApiSpecUrl に記載されている
+#   <YOUR_ORG> と <YOUR_REPO>
+# を実際の GitHub ユーザー名 / 組織名とリポジトリ名に差し替えてください。
+#
+# 例（リポジトリが public の場合）:
+#   https://raw.githubusercontent.com/contoso/security-copilot-plugins/main/
+#       DailySecurityResearchSummaryAgent/openapi_rss2json.yaml
+#
+# 代替ホスティング方法:
+#   - Azure Blob Storage (静的ウェブサイトホスティング)
+#   - GitHub Pages
+#   - その他 HTTPS でアクセス可能な公開 URL
+# ============================================================
+
+SkillGroups:
+  - Format: API
+    Settings:
+      OpenApiSpecUrl: https://raw.githubusercontent.com/kwata516/DailySecurityResearchSummaryAgent/refs/heads/main/openapi_combined.yaml

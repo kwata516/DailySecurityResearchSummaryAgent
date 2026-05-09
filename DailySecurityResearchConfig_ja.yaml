@@ -1,0 +1,123 @@
+Descriptor:
+  Name: DailySecurityResearchConfig
+  DisplayName: Daily Security Research Config
+  Description: >-
+    監視対象セキュリティリサーチャサイトの設定を返すプラグイン。
+    このファイルの Template 内 JSON を編集してサイトを追加・削除・変更し、
+    Security Copilot でプラグインを再インストールするだけで反映されます。
+    エージェント本体（DailySecurityResearchSummaryAgent）の変更は不要です。
+
+SkillGroups:
+  - Format: GPT
+    Skills:
+      - Name: GetMonitoredSites
+        DisplayName: Get Monitored Security Research Sites
+        Description: >-
+          監視対象セキュリティリサーチャサイトのリストを JSON 形式で返します。
+          rss_sites は RSS フィード経由で取得するサイト、
+          direct_api_sites は公式 API で直接取得するサイトです。
+          enabled: false にするとそのサイトはスキップされます。
+        Settings:
+          ModelName: gpt-4.1
+          Template: |-
+            以下の JSON を一切変更せず、そのままレスポンスとして返してください。
+            説明文・注釈・コードブロックのマークダウンは一切加えないでください。
+
+            {
+              "rss_sites": [
+                {
+                  "name": "CISA US-CERT Alerts",
+                  "url": "https://www.cisa.gov/uscert/ncas/alerts.xml",
+                  "category": "government",
+                  "enabled": false,
+                  "_note": "rss2json.com が cisa.gov の RSS に HTTP 422 を返すため無効化。CISA の最重要情報は direct_api_sites の FetchCISAKEV でカバー済み。RSS が必要な場合は https://www.cisa.gov/uscert/ncas/alerts.xml の到達性を別途確認してください"
+                },
+                {
+                  "name": "Microsoft Security Response Center Blog",
+                  "url": "https://msrc.microsoft.com/blog/feed",
+                  "category": "vendor",
+                  "enabled": true
+                },
+                {
+                  "name": "Google Project Zero",
+                  "url": "https://googleprojectzero.blogspot.com/feeds/posts/default",
+                  "category": "vendor",
+                  "enabled": true
+                },
+                {
+                  "name": "Krebs on Security",
+                  "url": "https://krebsonsecurity.com/feed/",
+                  "category": "blog",
+                  "enabled": true
+                },
+                {
+                  "name": "SANS Internet Storm Center",
+                  "url": "https://isc.sans.edu/rssfeed.xml",
+                  "category": "government",
+                  "enabled": true
+                },
+                {
+                  "name": "SANS Newsbites",
+                  "url": "https://www.sans.org/newsletters/newsbites/rss",
+                  "category": "government",
+                  "enabled": true,
+                  "_verify": "⚠️ インストール前に https://www.sans.org/newsletters/newsbites でRSSリンクを確認してください。代替URL候補: https://feeds.feedburner.com/SANSNewsBites"
+                },
+                {
+                  "name": "Unit 42 (Palo Alto Networks)",
+                  "url": "https://unit42.paloaltonetworks.com/feed/",
+                  "category": "vendor",
+                  "enabled": true
+                },
+                {
+                  "name": "Secureworks CTU Research",
+                  "url": "https://www.secureworks.com/rss?contentType=blog",
+                  "category": "vendor",
+                  "enabled": true
+                },
+                {
+                  "name": "CrowdStrike Blog",
+                  "url": "https://www.crowdstrike.com/blog/feed/",
+                  "category": "vendor",
+                  "enabled": true
+                },
+                {
+                  "name": "The Hacker News",
+                  "url": "https://feeds.feedburner.com/TheHackersNews",
+                  "category": "news",
+                  "enabled": true
+                },
+                {
+                  "name": "Dark Reading",
+                  "url": "https://www.darkreading.com/rss.xml",
+                  "category": "news",
+                  "enabled": true
+                },
+                {
+                  "name": "ScanNetSecurity",
+                  "url": "https://scan.netsecurity.ne.jp/article/rss/",
+                  "category": "ja",
+                  "enabled": true,
+                  "_verify": "⚠️ インストール前に https://scan.netsecurity.ne.jp/ でRSSリンクを確認してください"
+                },
+                {
+                  "name": "Security Memo (kjm)",
+                  "url": "https://www.st.ryukoku.ac.jp/~kjm/security/memo/index.rdf",
+                  "category": "ja",
+                  "enabled": true,
+                  "_verify": "⚠️ インストール前に https://www.st.ryukoku.ac.jp/~kjm/security/memo/ でRSSリンクを確認してください"
+                }
+              ],
+              "direct_api_sites": [
+                {
+                  "name": "CISA Known Exploited Vulnerabilities (KEV)",
+                  "skill": "FetchCISAKEV",
+                  "enabled": true
+                },
+                {
+                  "name": "NIST NVD (新規CVE)",
+                  "skill": "FetchTodaysNVDCVEs",
+                  "enabled": true
+                }
+              ]
+            }

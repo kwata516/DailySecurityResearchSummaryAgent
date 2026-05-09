@@ -1,0 +1,295 @@
+openapi: 3.0.0
+info:
+  title: Daily Security Research Fetcher API
+  description: >-
+    Combined API specification for DailySecurityResearchFetcher.
+    Provides three operations used by DailySecurityResearchSummaryAgent:
+    1. FetchRSSFeed — converts any RSS/Atom feed to JSON via rss2json.com
+    2. FetchCISAKEV — retrieves the CISA Known Exploited Vulnerabilities catalog
+    3. FetchTodaysNVDCVEs — retrieves CVEs published today from NIST NVD
+  version: "1.0"
+servers:
+  - url: https://api.rss2json.com/v1
+
+paths:
+  # ── RSS Feed Converter (server: https://api.rss2json.com/v1) ──────────────
+  /api.json:
+    get:
+      operationId: FetchRSSFeed
+      summary: Fetch and convert an RSS or Atom feed to JSON
+      description: |
+        Fetches the specified RSS/Atom feed URL and returns its entries as structured JSON.
+        Pass the full public URL of the target RSS feed as rss_url.
+        The response includes a list of items with title, pubDate, link, and description.
+        pubDate format is "YYYY-MM-DD HH:mm:ss" — filter by date prefix to extract today's entries.
+        #ExamplePrompts Fetch the latest items from the Krebs on Security RSS feed
+        #ExamplePrompts Get the latest 20 items from the Dark Reading RSS feed
+        #ExamplePrompts Fetch the CrowdStrike blog RSS feed and return today's articles
+      parameters:
+        - in: query
+          name: rss_url
+          schema:
+            type: string
+          required: true
+          description: >-
+            Full URL of the RSS or Atom feed to fetch.
+            Example: https://krebsonsecurity.com/feed/
+        - in: query
+          name: api_key
+          schema:
+            type: string
+          required: false
+          description: >-
+            Optional rss2json.com API key (paid plan).
+            Do NOT send this parameter unless you have a valid API key — omit it entirely for the free tier.
+            NOTE: The "count" parameter is also a paid feature and is excluded from this spec.
+      responses:
+        "200":
+          description: RSS feed parsed and returned successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    description: '"ok" on success, "error" on failure'
+                  feed:
+                    type: object
+                    properties:
+                      url:
+                        type: string
+                      title:
+                        type: string
+                      link:
+                        type: string
+                      description:
+                        type: string
+                  items:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        title:
+                          type: string
+                        pubDate:
+                          type: string
+                          description: Publication date in "YYYY-MM-DD HH:mm:ss" format (UTC)
+                        link:
+                          type: string
+                        author:
+                          type: string
+                        description:
+                          type: string
+                        content:
+                          type: string
+                        categories:
+                          type: array
+                          items:
+                            type: string
+        "422":
+          description: Feed URL is invalid or could not be parsed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  message:
+                    type: string
+
+  # ── CISA KEV (server override: https://www.cisa.gov) ─────────────────────
+  /sites/default/files/feeds/known_exploited_vulnerabilities.json:
+    get:
+      operationId: FetchCISAKEV
+      summary: Fetch the full CISA Known Exploited Vulnerabilities catalog
+      description: |
+        Returns the complete CISA KEV catalog as JSON.
+        Filter by dateAdded == today's date (YYYY-MM-DD) to extract newly added entries.
+        If no entries were added today, show the most recently added 5 entries as reference.
+        #ExamplePrompts Get today's CISA Known Exploited Vulnerabilities
+        #ExamplePrompts Fetch the CISA KEV catalog and show entries added today
+      servers:
+        - url: https://www.cisa.gov
+      responses:
+        "200":
+          description: KEV catalog retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  title:
+                    type: string
+                  catalogVersion:
+                    type: string
+                  dateReleased:
+                    type: string
+                  count:
+                    type: integer
+                  vulnerabilities:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        cveID:
+                          type: string
+                        vendorProject:
+                          type: string
+                        product:
+                          type: string
+                        vulnerabilityName:
+                          type: string
+                        dateAdded:
+                          type: string
+                          description: Date added to KEV catalog (YYYY-MM-DD)
+                        shortDescription:
+                          type: string
+                        requiredAction:
+                          type: string
+                        dueDate:
+                          type: string
+                        knownRansomwareCampaignUse:
+                          type: string
+                        notes:
+                          type: string
+
+  # ── NIST NVD CVE API 2.0 (server override: https://services.nvd.nist.gov) ─
+  /rest/json/cves/2.0:
+    get:
+      operationId: FetchTodaysNVDCVEs
+      summary: Fetch CVEs published today from the NIST NVD
+      description: |
+        Returns CVE records published within the specified date range from the NVD API 2.0.
+        Pass pubStartDate and pubEndDate in ISO 8601 format to filter by today's date.
+        pubStartDate example: 2026-05-09T00:00:00.000
+        pubEndDate example:   2026-05-09T23:59:59.999
+        #ExamplePrompts Get CVEs published today from NIST NVD
+        #ExamplePrompts Fetch new CVEs from NIST NVD for today with CVSS scores
+      servers:
+        - url: https://services.nvd.nist.gov
+      parameters:
+        - in: query
+          name: pubStartDate
+          schema:
+            type: string
+          required: true
+          description: >-
+            Start of the publication date range (ISO 8601).
+            Example: 2026-05-09T00:00:00.000
+        - in: query
+          name: pubEndDate
+          schema:
+            type: string
+          required: true
+          description: >-
+            End of the publication date range (ISO 8601).
+            Example: 2026-05-09T23:59:59.999
+        - in: query
+          name: resultsPerPage
+          schema:
+            type: integer
+            default: 50
+            minimum: 1
+            maximum: 2000
+          required: false
+          description: Number of CVE records to return per page (default 50, max 2000)
+        - in: query
+          name: startIndex
+          schema:
+            type: integer
+            default: 0
+          required: false
+          description: Zero-based index for pagination
+        - in: query
+          name: apiKey
+          schema:
+            type: string
+          required: false
+          description: >-
+            Optional NVD API key for higher rate limits (50 req/30sec vs 5 req/30sec).
+            Obtain free at https://nvd.nist.gov/developers/request-an-api-key
+      responses:
+        "200":
+          description: CVE records retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultsPerPage:
+                    type: integer
+                  startIndex:
+                    type: integer
+                  totalResults:
+                    type: integer
+                  format:
+                    type: string
+                  version:
+                    type: string
+                  timestamp:
+                    type: string
+                  vulnerabilities:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        cve:
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                            published:
+                              type: string
+                            lastModified:
+                              type: string
+                            vulnStatus:
+                              type: string
+                            descriptions:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  lang:
+                                    type: string
+                                  value:
+                                    type: string
+                            metrics:
+                              type: object
+                              properties:
+                                cvssMetricV31:
+                                  type: array
+                                  items:
+                                    type: object
+                                    properties:
+                                      cvssData:
+                                        type: object
+                                        properties:
+                                          baseScore:
+                                            type: number
+                                          baseSeverity:
+                                            type: string
+                                cvssMetricV40:
+                                  type: array
+                                  items:
+                                    type: object
+                            weaknesses:
+                              type: array
+                              items:
+                                type: object
+                            references:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  url:
+                                    type: string
+                                  source:
+                                    type: string
+                                  tags:
+                                    type: array
+                                    items:
+                                      type: string
+        "403":
+          description: Rate limit exceeded. Retry after 30 seconds.

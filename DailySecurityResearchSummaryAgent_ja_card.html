@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Security Copilot Plugin Card — Daily Security Research Summary Agent</title>
+  <style>
+    :root {
+      --primary: #0078D4;
+      --primary-dark: #005A9E;
+      --accent: #50E6FF;
+      --bg: #F5F5F5;
+      --card-bg: #FFFFFF;
+      --text: #323130;
+      --text-secondary: #605E5C;
+      --border: #E1DFDD;
+      --badge-kql: #0E7A0D;
+      --badge-api: #C239B3;
+      --badge-gpt: #E74C3C;
+      --badge-logicapp: #0072C6;
+      --badge-mcp: #FF8C00;
+      --badge-agent: #107C10;
+      --badge-none: #605E5C;
+      --badge-apikey: #8764B8;
+      --badge-aad: #0078D4;
+      --badge-oauth: #038387;
+      --shadow: 0 2px 8px rgba(0,0,0,0.08);
+      --shadow-lg: 0 4px 16px rgba(0,0,0,0.12);
+      --radius: 8px;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      padding: 32px;
+    }
+
+    .container { max-width: 1000px; margin: 0 auto; }
+
+    /* ── Header ── */
+    .plugin-header {
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      color: white;
+      padding: 32px 40px;
+      border-radius: var(--radius) var(--radius) 0 0;
+      position: relative;
+      overflow: hidden;
+    }
+    .plugin-header::after {
+      content: '';
+      position: absolute;
+      top: -60px; right: -60px;
+      width: 240px; height: 240px;
+      background: rgba(80,230,255,0.06);
+      border-radius: 50%;
+    }
+    .plugin-header::before {
+      content: '';
+      position: absolute;
+      bottom: -40px; left: 30%;
+      width: 160px; height: 160px;
+      background: rgba(80,230,255,0.04);
+      border-radius: 50%;
+    }
+    .plugin-header .type-label {
+      display: inline-block;
+      background: rgba(80,230,255,0.2);
+      border: 1px solid rgba(80,230,255,0.4);
+      color: #50E6FF;
+      padding: 4px 14px;
+      border-radius: 20px;
+      font-size: 12px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 1.5px;
+      margin-bottom: 12px;
+    }
+    .plugin-header h1 { font-size: 26px; font-weight: 700; margin-bottom: 4px; }
+    .plugin-header .internal-name {
+      font-size: 13px; opacity: 0.6;
+      font-family: 'Cascadia Code', 'Fira Code', monospace;
+      margin-bottom: 12px;
+    }
+    .plugin-header .description { font-size: 14px; opacity: 0.88; max-width: 760px; line-height: 1.7; }
+
+    /* ── Meta bar ── */
+    .meta-bar {
+      background: var(--card-bg);
+      border-left: 1px solid var(--border); border-right: 1px solid var(--border);
+      padding: 14px 40px;
+      display: flex; gap: 28px; flex-wrap: wrap; align-items: center;
+      border-bottom: 1px solid var(--border);
+    }
+    .meta-item { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-secondary); }
+    .meta-item strong { color: var(--text); font-weight: 600; }
+    .meta-item .icon { font-size: 16px; }
+
+    .auth-badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 3px 10px; border-radius: 12px;
+      font-size: 12px; font-weight: 600; color: white;
+    }
+    .auth-none { background: var(--badge-none); }
+
+    /* ── Content area ── */
+    .content {
+      background: var(--card-bg);
+      border-left: 1px solid var(--border); border-right: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      border-radius: 0 0 var(--radius) var(--radius);
+      padding: 32px 40px;
+    }
+
+    .section-title {
+      font-size: 17px; font-weight: 700; color: var(--primary);
+      margin-bottom: 16px; margin-top: 32px;
+      display: flex; align-items: center; gap: 8px;
+      padding-bottom: 8px; border-bottom: 2px solid var(--primary);
+    }
+    .section-title:first-child { margin-top: 0; }
+
+    /* ── Skill groups ── */
+    .skill-group { margin-bottom: 28px; }
+    .skill-group-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+    .format-badge {
+      display: inline-block; padding: 4px 12px; border-radius: 4px;
+      font-size: 12px; font-weight: 700; color: white;
+      text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    .format-api  { background: var(--badge-api); }
+    .format-gpt  { background: var(--badge-gpt); }
+    .format-agent { background: var(--badge-agent); }
+    .skill-group-header .group-info { font-size: 13px; color: var(--text-secondary); }
+    .skill-group-header .group-desc { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+
+    .skill-card {
+      background: var(--bg); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 16px 20px; margin-bottom: 10px;
+      transition: box-shadow 0.2s ease;
+    }
+    .skill-card:hover { box-shadow: var(--shadow); }
+    .skill-card .skill-name { font-size: 15px; font-weight: 600; color: var(--text); }
+    .skill-card .skill-internal {
+      font-size: 12px; color: var(--text-secondary);
+      font-family: 'Cascadia Code', 'Fira Code', monospace; margin-bottom: 6px;
+    }
+    .skill-card .skill-desc { font-size: 13px; color: var(--text-secondary); margin-bottom: 10px; }
+
+    .inputs-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 8px; }
+    .inputs-table th {
+      text-align: left; padding: 6px 10px; background: var(--card-bg);
+      border-bottom: 2px solid var(--border); color: var(--text-secondary);
+      font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    .inputs-table td { padding: 6px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+    .inputs-table .param-name {
+      font-family: 'Cascadia Code', 'Fira Code', monospace;
+      font-weight: 600; color: var(--primary-dark); white-space: nowrap;
+    }
+    .required-marker { color: #D13438; font-weight: 700; margin-left: 2px; }
+    .default-value {
+      font-family: 'Cascadia Code', 'Fira Code', monospace; font-size: 12px;
+      background: #E8F0FE; padding: 1px 6px; border-radius: 3px;
+    }
+
+    /* ── Agent section ── */
+    .agent-info-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 20px;
+    }
+    .agent-info-item {
+      background: var(--bg); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 14px 18px;
+    }
+    .agent-info-item .label {
+      font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;
+      color: var(--text-secondary); font-weight: 600; margin-bottom: 4px;
+    }
+    .agent-info-item .value { font-size: 14px; color: var(--text); font-weight: 500; }
+
+    .tags-list { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+    .tag {
+      padding: 4px 12px; border-radius: 16px;
+      font-size: 13px; font-weight: 500;
+      font-family: 'Cascadia Code', 'Fira Code', monospace;
+      border: 1px solid;
+    }
+    .tag-skill { background: #E8F0FE; color: var(--primary-dark); border-color: #C7DDFB; }
+    .tag-skillset { background: #EFF6EF; color: #0E7A0D; border-color: #C8E6C9; }
+
+    /* ── Sites table ── */
+    .sites-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 4px; }
+    .sites-table th {
+      text-align: left; padding: 7px 10px; background: var(--bg);
+      border-bottom: 2px solid var(--border); color: var(--text-secondary);
+      font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    .sites-table td { padding: 7px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+    .sites-table tr:last-child td { border-bottom: none; }
+    .cat-badge {
+      display: inline-block; padding: 2px 8px; border-radius: 10px;
+      font-size: 11px; font-weight: 600; letter-spacing: 0.3px;
+    }
+    .cat-government { background: #EFF6FF; color: #1e40af; border: 1px solid #BFDBFE; }
+    .cat-vendor     { background: #F0FDF4; color: #166534; border: 1px solid #BBF7D0; }
+    .cat-news       { background: #FFF7ED; color: #9a3412; border: 1px solid #FED7AA; }
+    .cat-blog       { background: #F5F3FF; color: #5b21b6; border: 1px solid #DDD6FE; }
+    .cat-ja         { background: #FFF1F2; color: #9f1239; border: 1px solid #FECDD3; }
+    .cat-direct     { background: #F0F9FF; color: #0369a1; border: 1px solid #BAE6FD; }
+    .warn-icon { color: #CA8A04; font-size: 12px; }
+
+    /* ── Workflow ── */
+    .workflow-steps { list-style: none; margin-top: 8px; }
+    .workflow-steps li {
+      display: flex; gap: 14px; align-items: flex-start;
+      padding: 10px 0; border-bottom: 1px solid var(--border);
+    }
+    .workflow-steps li:last-child { border-bottom: none; }
+    .step-num {
+      flex-shrink: 0;
+      width: 28px; height: 28px;
+      background: var(--primary); color: white;
+      border-radius: 50%; display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 700;
+    }
+    .step-body { flex: 1; }
+    .step-title { font-weight: 600; font-size: 14px; margin-bottom: 2px; }
+    .step-desc  { font-size: 13px; color: var(--text-secondary); }
+
+    /* ── Report structure ── */
+    .report-sections { margin-top: 8px; }
+    .report-section-item {
+      display: flex; gap: 12px; align-items: flex-start;
+      padding: 9px 0; border-bottom: 1px solid var(--border);
+    }
+    .report-section-item:last-child { border-bottom: none; }
+    .report-emoji { font-size: 20px; flex-shrink: 0; width: 28px; text-align: center; }
+    .report-section-body { flex: 1; }
+    .report-section-name { font-weight: 600; font-size: 14px; }
+    .report-section-desc { font-size: 13px; color: var(--text-secondary); }
+
+    /* ── Footer ── */
+    .card-footer {
+      text-align: center; padding: 20px;
+      font-size: 12px; color: var(--text-secondary); margin-top: 8px;
+    }
+    .card-footer a { color: var(--primary); text-decoration: none; }
+
+    @media (max-width: 680px) {
+      body { padding: 12px; }
+      .plugin-header, .meta-bar, .content { padding-left: 20px; padding-right: 20px; }
+      .agent-info-grid { grid-template-columns: 1fr; }
+      .meta-bar { flex-direction: column; gap: 12px; align-items: flex-start; }
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <!-- ══ HEADER ══ -->
+  <div class="plugin-header">
+    <div class="type-label">Agent</div>
+    <h1>🛡️ Daily Security Research Summary Agent</h1>
+    <div class="internal-name">DailySecurityResearchSummaryAgent</div>
+    <div class="description">
+      主要セキュリティリサーチャサイトの本日更新コンテンツを毎日自動収集し、
+      重要度別ハイライト・CISA KEV・NIST NVD・サイト別最新情報・推奨アクションを含む
+      日本語の日次セキュリティリサーチ・サマリーレポートを自動生成するエージェント。
+      監視対象サイトは設定プラグインの JSON を編集して再インストールするだけで追加・削除が可能です。
+    </div>
+  </div>
+
+  <!-- ══ META BAR ══ -->
+  <div class="meta-bar">
+    <div class="meta-item">
+      <span class="icon">🔌</span>
+      <span>Plugins: <strong>3</strong></span>
+    </div>
+    <div class="meta-item">
+      <span class="icon">⚡</span>
+      <span>Skills: <strong>5</strong></span>
+    </div>
+    <div class="meta-item">
+      <span class="icon">📦</span>
+      <span>Formats: <strong>Agent, GPT, API</strong></span>
+    </div>
+    <div class="meta-item">
+      <span class="icon">⏰</span>
+      <span>Trigger: <strong>Daily (86400s)</strong></span>
+    </div>
+    <div class="meta-item">
+      <span class="icon">🔒</span>
+      <span>Auth: <span class="auth-badge auth-none">None</span></span>
+    </div>
+    <div class="meta-item">
+      <span class="icon">🌐</span>
+      <span>Sources: <strong>14 active</strong> / 15 total</span>
+    </div>
+  </div>
+
+  <!-- ══ CONTENT ══ -->
+  <div class="content">
+
+    <!-- Agent Workflow -->
+    <div class="section-title"><span>🤖</span> Agent Workflow</div>
+    <div class="agent-info-grid">
+      <div class="agent-info-item">
+        <div class="label">Agent Name</div>
+        <div class="value">DailySecurityResearchSummaryAgent</div>
+      </div>
+      <div class="agent-info-item">
+        <div class="label">Model</div>
+        <div class="value">gpt-4.1</div>
+      </div>
+      <div class="agent-info-item">
+        <div class="label">Trigger</div>
+        <div class="value">DailyReport — every 86400s (24h)</div>
+      </div>
+      <div class="agent-info-item">
+        <div class="label">Process Skill</div>
+        <div class="value">DailySecurityResearchSummaryAgent<br/>.GenerateDailySecurityResearchSummary</div>
+      </div>
+    </div>
+
+    <ul class="workflow-steps">
+      <li>
+        <div class="step-num">0</div>
+        <div class="step-body">
+          <div class="step-title">設定の読み込み</div>
+          <div class="step-desc">GetMonitoredSites を呼び出して監視対象サイトリスト JSON を取得。enabled=false のサイトはスキップ。</div>
+        </div>
+      </li>
+      <li>
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <div class="step-title">レポート対象日の決定</div>
+          <div class="step-desc">ReportDate 入力または UTC 本日日付（YYYY-MM-DD）を導出。NVD API 用に ISO 8601 形式の pubStartDate / pubEndDate を準備。</div>
+        </div>
+      </li>
+      <li>
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <div class="step-title">全ソースを並列フェッチ</div>
+          <div class="step-desc">enabled の全 RSS サイトに FetchRSSFeed を同時並列で実行、FetchCISAKEV・FetchTodaysNVDCVEs も並列起動。フェッチ失敗はスキップして処理継続。</div>
+        </div>
+      </li>
+      <li>
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <div class="step-title">当日分コンテンツのフィルタリング</div>
+          <div class="step-desc">RSS: pubDate が本日の記事のみ抽出。CISA KEV: dateAdded == today のエントリ（0 件なら直近 5 件を参考掲載）。NVD: API パラメータ指定済みのため全件使用。</div>
+        </div>
+      </li>
+      <li>
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <div class="step-title">重要度の評価</div>
+          <div class="step-desc">🔴 緊急 (CVSS 9.0+・積極的悪用・ゼロデイ) / 🟠 高 (CVSS 7.0–8.9・主要製品 RCE) / 🟡 中 (CVSS 4.0–6.9) / 🔵 情報</div>
+        </div>
+      </li>
+      <li>
+        <div class="step-num">5</div>
+        <div class="step-body">
+          <div class="step-title">日本語サマリーレポートの生成</div>
+          <div class="step-desc">重要ハイライト・CISA KEV・NVD・サイト別情報・推奨アクション・統計を含む構造化レポートを OutputLanguage で出力。</div>
+        </div>
+      </li>
+    </ul>
+
+    <div style="margin-top:20px;">
+      <h4 style="font-size: 13px; color: var(--text-secondary); font-weight:600; text-transform:uppercase; letter-spacing:.5px; margin-bottom:8px;">Child Skills</h4>
+      <div class="tags-list">
+        <span class="tag tag-skill">GetMonitoredSites</span>
+        <span class="tag tag-skill">FetchRSSFeed</span>
+        <span class="tag tag-skill">FetchCISAKEV</span>
+        <span class="tag tag-skill">FetchTodaysNVDCVEs</span>
+      </div>
+    </div>
+    <div style="margin-top:14px;">
+      <h4 style="font-size: 13px; color: var(--text-secondary); font-weight:600; text-transform:uppercase; letter-spacing:.5px; margin-bottom:8px;">Required Skillsets</h4>
+      <div class="tags-list">
+        <span class="tag tag-skillset">DailySecurityResearchSummaryAgent</span>
+        <span class="tag tag-skillset">DailySecurityResearchConfig</span>
+        <span class="tag tag-skillset">DailySecurityResearchFetcher</span>
+      </div>
+    </div>
+
+    <!-- Agent Inputs -->
+    <div class="section-title"><span>📥</span> Agent Inputs</div>
+    <div class="skill-group">
+      <table class="inputs-table">
+        <thead>
+          <tr><th>パラメータ</th><th>説明</th><th>必須</th><th>デフォルト</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="param-name">ReportDate</span></td>
+            <td>レポート対象日（YYYY-MM-DD 形式、例: 2026-05-09）。省略時は UTC 本日日付を自動使用。</td>
+            <td>No</td>
+            <td><span class="default-value">UTC today</span></td>
+          </tr>
+          <tr>
+            <td><span class="param-name">OutputLanguage</span></td>
+            <td>出力レポートの言語。例: "日本語", "English", "French"</td>
+            <td>No</td>
+            <td><span class="default-value">日本語</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Plugin 1: Config -->
+    <div class="section-title"><span>⚙️</span> Plugin 1 — DailySecurityResearchConfig <small style="font-size:13px; font-weight:400; color:var(--text-secondary);">（設定プラグイン）</small></div>
+    <div class="skill-group">
+      <div class="skill-group-header">
+        <span class="format-badge format-gpt">GPT</span>
+        <div>
+          <div class="group-info">1 skill</div>
+          <div class="group-desc">監視対象サイトリストを JSON で返す。このファイルを編集してサイトを追加・削除。</div>
+        </div>
+      </div>
+      <div class="skill-card">
+        <div class="skill-name">Get Monitored Security Research Sites</div>
+        <div class="skill-internal">GetMonitoredSites</div>
+        <div class="skill-desc">
+          監視対象セキュリティリサーチャサイトのリストを JSON 形式で返します。
+          rss_sites（RSS フィード経由）と direct_api_sites（直接 API）の 2 種類を含みます。
+          enabled: false にするとそのサイトはスキップされます。
+        </div>
+        <table class="inputs-table">
+          <thead><tr><th>パラメータ</th><th>説明</th><th>必須</th><th>デフォルト</th></tr></thead>
+          <tbody>
+            <tr>
+              <td colspan="4" style="color:var(--text-secondary); font-style:italic; padding: 10px;">
+                パラメータなし — Template 内の JSON をそのまま返します
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Plugin 2: Fetcher -->
+    <div class="section-title"><span>📡</span> Plugin 2 — DailySecurityResearchFetcher <small style="font-size:13px; font-weight:400; color:var(--text-secondary);">（データ取得プラグイン）</small></div>
+    <p style="font-size:12px; color:var(--text-secondary); margin-bottom:16px;">
+      ⚙️ 単一 SkillGroup（<code>openapi_combined.yaml</code>）に 3 API をまとめた構成。Security Copilot は 1 プラグインあたり API SkillGroup を 1 つしかサポートしないため統合済み。
+    </p>
+
+    <!-- SkillGroup: RSS -->
+    <div class="skill-group">
+      <div class="skill-group-header">
+        <span class="format-badge format-api">API</span>
+        <div>
+          <div class="group-info">1 skill — rss2json.com（openapi_combined.yaml）</div>
+          <div class="group-desc">任意の RSS/Atom フィードを JSON に変換して返す。無料枠: 1 フィードあたり最新 10 件固定。</div>
+        </div>
+      </div>
+      <div class="skill-card">
+        <div class="skill-name">Fetch RSS Feed</div>
+        <div class="skill-internal">FetchRSSFeed</div>
+        <div class="skill-desc">
+          指定された RSS/Atom フィード URL を rss2json.com 経由で取得し、items 配列として返します。
+          各 item の pubDate は "YYYY-MM-DD HH:mm:ss" 形式 — 本日日付でフィルタリング可能。<br/>
+          <span style="color:#D13438; font-size:12px;">⚠️ <code>count</code> パラメータは有料機能です。API Key なしで送信すると HTTP 422 が返りエージェントが停止するため、OpenAPI spec から除外済みです。無料枠は 1 フィードあたり最新 10 件固定。</span>
+        </div>
+        <table class="inputs-table">
+          <thead><tr><th>パラメータ</th><th>説明</th><th>必須</th><th>デフォルト</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><span class="param-name">rss_url</span><span class="required-marker">*</span></td>
+              <td>取得する RSS/Atom フィードの完全 URL（例: https://krebsonsecurity.com/feed/）</td>
+              <td><strong>Yes</strong></td>
+              <td>—</td>
+            </tr>
+            <tr>
+              <td><span class="param-name">api_key</span></td>
+              <td>rss2json.com API キー（有料プラン。設定時は count も利用可能になる）</td>
+              <td>No</td>
+              <td><span class="default-value">""</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- SkillGroup: CISA KEV -->
+    <div class="skill-group">
+      <div class="skill-group-header">
+        <span class="format-badge format-api">API</span>
+        <div>
+          <div class="group-info">1 skill — CISA KEV API（openapi_combined.yaml）</div>
+          <div class="group-desc">CISA Known Exploited Vulnerabilities カタログを直接取得。</div>
+        </div>
+      </div>
+      <div class="skill-card">
+        <div class="skill-name">Fetch CISA Known Exploited Vulnerabilities</div>
+        <div class="skill-internal">FetchCISAKEV</div>
+        <div class="skill-desc">
+          CISA KEV カタログ全件を JSON で取得します。dateAdded フィールドで本日追加のエントリを抽出。
+          本日追加なしの場合は直近 5 件を参考として表示します。
+        </div>
+        <table class="inputs-table">
+          <thead><tr><th>パラメータ</th><th>説明</th><th>必須</th><th>デフォルト</th></tr></thead>
+          <tbody>
+            <tr>
+              <td colspan="4" style="color:var(--text-secondary); font-style:italic; padding: 10px;">
+                パラメータなし — カタログ全件を取得します
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- SkillGroup: NVD -->
+    <div class="skill-group">
+      <div class="skill-group-header">
+        <span class="format-badge format-api">API</span>
+        <div>
+          <div class="group-info">1 skill — NIST NVD CVE API 2.0（openapi_combined.yaml）</div>
+          <div class="group-desc">指定日に公開された CVE を NVD API から直接取得。</div>
+        </div>
+      </div>
+      <div class="skill-card">
+        <div class="skill-name">Fetch Today's NVD CVEs</div>
+        <div class="skill-internal">FetchTodaysNVDCVEs</div>
+        <div class="skill-desc">
+          指定した日付範囲に NVD へ公開された CVE 一覧を取得します。
+          CVSS スコア・説明・参照リンク・CWE 情報を含みます。
+        </div>
+        <table class="inputs-table">
+          <thead><tr><th>パラメータ</th><th>説明</th><th>必須</th><th>デフォルト</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><span class="param-name">pubStartDate</span><span class="required-marker">*</span></td>
+              <td>検索開始日時 (ISO 8601)。例: 2026-05-09T00:00:00.000</td>
+              <td><strong>Yes</strong></td>
+              <td>—</td>
+            </tr>
+            <tr>
+              <td><span class="param-name">pubEndDate</span><span class="required-marker">*</span></td>
+              <td>検索終了日時 (ISO 8601)。例: 2026-05-09T23:59:59.999</td>
+              <td><strong>Yes</strong></td>
+              <td>—</td>
+            </tr>
+            <tr>
+              <td><span class="param-name">resultsPerPage</span></td>
+              <td>1 ページあたりの結果数（1–2000）</td>
+              <td>No</td>
+              <td><span class="default-value">50</span></td>
+            </tr>
+            <tr>
+              <td><span class="param-name">apiKey</span></td>
+              <td>NVD API キー（オプション。取得: nvd.nist.gov/developers/request-an-api-key）</td>
+              <td>No</td>
+              <td>—</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Monitored Sites -->
+    <div class="section-title"><span>🌐</span> 監視対象サイト（15 ソース / うち 1 無効）</div>
+    <table class="sites-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>サイト名</th>
+          <th>カテゴリ</th>
+          <th>取得方式</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr style="opacity:0.55;"><td>1</td><td><s>CISA US-CERT Alerts</s> <span style="font-size:11px;color:#D13438;font-weight:600;">無効</span></td><td><span class="cat-badge cat-government">government</span></td><td><s>RSS (rss2json)</s> — rss2json が 422 を返すため無効。KEV 直接 API でカバー。</td></tr>
+        <tr><td>2</td><td>CISA Known Exploited Vulnerabilities (KEV)</td><td><span class="cat-badge cat-direct">direct API</span></td><td>CISA JSON API</td></tr>
+        <tr><td>3</td><td>NIST NVD（新規 CVE）</td><td><span class="cat-badge cat-direct">direct API</span></td><td>NVD REST API</td></tr>
+        <tr><td>4</td><td>Microsoft Security Response Center Blog</td><td><span class="cat-badge cat-vendor">vendor</span></td><td>RSS (rss2json)</td></tr>
+        <tr><td>5</td><td>Google Project Zero</td><td><span class="cat-badge cat-vendor">vendor</span></td><td>RSS (rss2json)</td></tr>
+        <tr><td>6</td><td>Krebs on Security</td><td><span class="cat-badge cat-blog">blog</span></td><td>RSS (rss2json)</td></tr>
+        <tr><td>7</td><td>SANS Internet Storm Center</td><td><span class="cat-badge cat-government">government</span></td><td>RSS (rss2json)</td></tr>
+        <tr><td>8</td><td>SANS Newsbites</td><td><span class="cat-badge cat-government">government</span></td><td>RSS (rss2json) <span class="warn-icon">⚠️要確認</span></td></tr>
+        <tr><td>9</td><td>Unit 42 (Palo Alto Networks)</td><td><span class="cat-badge cat-vendor">vendor</span></td><td>RSS (rss2json)</td></tr>
+        <tr><td>10</td><td>Secureworks CTU Research</td><td><span class="cat-badge cat-vendor">vendor</span></td><td>RSS (rss2json)</td></tr>
+        <tr><td>11</td><td>CrowdStrike Blog</td><td><span class="cat-badge cat-vendor">vendor</span></td><td>RSS (rss2json)</td></tr>
+        <tr><td>12</td><td>The Hacker News</td><td><span class="cat-badge cat-news">news</span></td><td>RSS (rss2json)</td></tr>
+        <tr><td>13</td><td>Dark Reading</td><td><span class="cat-badge cat-news">news</span></td><td>RSS (rss2json)</td></tr>
+        <tr><td>14</td><td>ScanNetSecurity</td><td><span class="cat-badge cat-ja">ja</span></td><td>RSS (rss2json) <span class="warn-icon">⚠️要確認</span></td></tr>
+        <tr><td>15</td><td>Security Memo (kjm)</td><td><span class="cat-badge cat-ja">ja</span></td><td>RSS (rss2json) <span class="warn-icon">⚠️要確認</span></td></tr>
+      </tbody>
+    </table>
+    <p style="margin-top:8px; font-size:12px; color:var(--text-secondary);">
+      ⚠️ 印のサイトは RSS URL が未確認です。インストール前にブラウザで確認し、<code>DailySecurityResearchConfig_ja.yaml</code> の url フィールドを更新してください。<br/>
+      🔴 CISA US-CERT Alerts は rss2json.com が HTTP 422 を返すため <code>"enabled": false</code> に設定済み。CISA の重要情報は FetchCISAKEV（直接 API）で引き続き取得されます。
+    </p>
+
+    <!-- Report Output -->
+    <div class="section-title"><span>📄</span> レポート出力形式</div>
+    <div class="report-sections">
+      <div class="report-section-item">
+        <div class="report-emoji">⚡</div>
+        <div class="report-section-body">
+          <div class="report-section-name">重要・緊急ハイライト</div>
+          <div class="report-section-desc">🔴 緊急 / 🟠 高 に分類されたアイテム（最大 10 件）。タイトル・概要・リンク・関連 CVE を掲載。</div>
+        </div>
+      </div>
+      <div class="report-section-item">
+        <div class="report-emoji">🦠</div>
+        <div class="report-section-body">
+          <div class="report-section-name">CISA Known Exploited Vulnerabilities (KEV)</div>
+          <div class="report-section-desc">本日追加のエントリを表形式で掲載。CVE ID・ベンダー・製品・追加日・期限・ランサムウェア利用情報を含む。</div>
+        </div>
+      </div>
+      <div class="report-section-item">
+        <div class="report-emoji">🆕</div>
+        <div class="report-section-body">
+          <div class="report-section-name">NIST NVD 本日公開 CVE（上位 20 件）</div>
+          <div class="report-section-desc">CVSS スコア降順で最大 20 件。CVE ID・スコア・深刻度・製品・説明を日本語で掲載。</div>
+        </div>
+      </div>
+      <div class="report-section-item">
+        <div class="report-emoji">📰</div>
+        <div class="report-section-body">
+          <div class="report-section-name">サイト別最新情報</div>
+          <div class="report-section-desc">government / vendor / news / blog / ja のカテゴリ別セクション。当日記事なしのサイトは「本日の更新なし」と 1 行記載。</div>
+        </div>
+      </div>
+      <div class="report-section-item">
+        <div class="report-emoji">🎯</div>
+        <div class="report-section-body">
+          <div class="report-section-name">本日の推奨アクション</div>
+          <div class="report-section-desc">当日コンテンツを総合評価した、優先度順の推奨アクション（最大 5 件）。対象製品・CVE・参照リンクを含む。</div>
+        </div>
+      </div>
+      <div class="report-section-item">
+        <div class="report-emoji">📊</div>
+        <div class="report-section-body">
+          <div class="report-section-name">調査統計</div>
+          <div class="report-section-desc">調査日時・フェッチ成功サイト数・当日更新記事合計・KEV 当日追加・NVD 当日公開 CVE 数・緊急/高リスクアイテム数。</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Install Order -->
+    <div class="section-title"><span>📋</span> インストール手順</div>
+    <div style="background:var(--bg); border:1px solid var(--border); border-radius:var(--radius); padding:16px 20px;">
+      <ol style="padding-left:20px; font-size:14px; line-height:2;">
+        <li><strong>openapi_combined.yaml をホスティング</strong> — リポジトリを公開 GitHub に push し、<code>DailySecurityResearchFetcher_ja.yaml</code> 内の <code>&lt;YOUR_ORG&gt;/&lt;YOUR_REPO&gt;</code> を実際の値に置換（参照先: <code>openapi_combined.yaml</code>）</li>
+        <li><strong>⚠️ 要確認 RSS URL を検証</strong> — SANS Newsbites / ScanNetSecurity / Security Memo (kjm) の RSS URL をブラウザで確認</li>
+        <li><strong>DailySecurityResearchConfig_ja.yaml</strong> をインストール</li>
+        <li><strong>DailySecurityResearchFetcher_ja.yaml</strong> をインストール</li>
+        <li><strong>DailySecurityResearchSummaryAgent_ja.yaml</strong> をインストール</li>
+        <li><strong>手動実行でテスト</strong>:「今日のセキュリティリサーチサマリーを生成してください」</li>
+      </ol>
+    </div>
+
+  </div><!-- /.content -->
+
+  <!-- ══ FOOTER ══ -->
+  <div class="card-footer">
+    Generated by <strong>Security Copilot Custom Plugins Builder</strong>
+    &mdash; <a href="https://learn.microsoft.com/en-us/copilot/security/custom-plugins" target="_blank">Docs</a>
+  </div>
+
+</div><!-- /.container -->
+</body>
+</html>
