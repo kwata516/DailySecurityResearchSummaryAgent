@@ -24,6 +24,7 @@ SkillGroups:
             説明文・注釈・コードブロックのマークダウンは一切加えないでください。
 
             {
+              "rss2json_api_key": "",
               "rss_sites": [
                 {
                   "name": "CISA US-CERT Alerts",

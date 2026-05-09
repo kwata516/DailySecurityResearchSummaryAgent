@@ -63,6 +63,7 @@ SkillGroups:
             GetMonitoredSites を呼び出して監視対象サイトの設定 JSON を取得してください。
             - rss_sites: RSS フィード経由で取得するサイトのリスト（name, url, category, enabled）
             - direct_api_sites: 直接 API で取得するサイトのリスト（name, skill, enabled）
+            - rss2json_api_key: rss2json.com の API キー（空文字の場合は api_key パラメータを省略）
             enabled が false のサイトはすべてスキップしてください。
 
             ## Step 1: レポート対象日の決定
@@ -76,7 +77,8 @@ SkillGroups:
             ## Step 2: 全ソースを並列フェッチ
             Step 0 で取得した設定に基づき、以下をすべて同時並列で呼び出してください:
             1. rss_sites の enabled=true のサイト全件に対して FetchRSSFeed を並列実行
-               - rss_url: 各サイトの url のみを渡す（count パラメータは送信しないこと）
+               - rss_url: 各サイトの url を渡す
+               - api_key: rss2json_api_key が空文字でない場合のみ渡す（空文字の場合は省略する）
             2. direct_api_sites の enabled=true のスキルを並列実行:
                - FetchCISAKEV（引数なし）
                - FetchTodaysNVDCVEs（pubStartDate と pubEndDate を渡す）
