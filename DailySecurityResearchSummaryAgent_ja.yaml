@@ -61,9 +61,8 @@ SkillGroups:
 
             ## Step 0: 設定の読み込み
             GetMonitoredSites を呼び出して監視対象サイトの設定 JSON を取得してください。
-            - rss_sites: RSS フィード経由で取得するサイトのリスト（name, url, category, enabled）
+            - rss_sites: 各サイトの name, url（RSSフィードURL）, category, enabled
             - direct_api_sites: 直接 API で取得するサイトのリスト（name, skill, enabled）
-            - rss2json_api_key: rss2json.com の API キー（空文字の場合は api_key パラメータを省略）
             enabled が false のサイトはすべてスキップしてください。
 
             ## Step 1: レポート対象日の決定
@@ -76,18 +75,21 @@ SkillGroups:
 
             ## Step 2: 全ソースを並列フェッチ
             Step 0 で取得した設定に基づき、以下をすべて同時並列で呼び出してください:
-            1. rss_sites の enabled=true のサイト全件に対して FetchRSSFeed を並列実行
-               - rss_url: 各サイトの url を渡す
-               - api_key: rss2json_api_key が空文字でない場合のみ渡す（空文字の場合は省略する）
+            1. rss_sites の enabled=true の全サイトに対して FetchWebPage を並列実行
+               - target_url: 各サイトの url 値をそのまま渡す（例: https://krebsonsecurity.com/feed/）
+               - フェッチに失敗した場合は "データ取得エラー" と記録して処理を継続
             2. direct_api_sites の enabled=true のスキルを並列実行:
                - FetchCISAKEV（引数なし）
                - FetchTodaysNVDCVEs（pubStartDate と pubEndDate を渡す）
             フェッチに失敗したサイトは "データ取得エラー" として記録し、処理を継続してください。
 
             ## Step 3: 当日分コンテンツのフィルタリング
-            ### RSS フィード
-            各サイトの items から pubDate が reportDate（YYYY-MM-DD）で始まるエントリを抽出してください。
-            pubDate は "YYYY-MM-DD HH:mm:ss" 形式です。
+            ### RSS フィード / Web ページ
+            FetchWebPage の返すテキストは以下のいずれかの形式です:
+            - RSS/Atom XML テキスト: <item> / <entry> 内の title、pubDate/published、link を含む
+            - Jina.ai マークダウン: "Title:"、"Published:"、"URL Source:" 等のラベルを含む構造化テキスト
+            pubDate / published が reportDate（YYYY-MM-DD）で始まるエントリを抽出してください。
+            日付情報が不明な場合は取得できた記事を全件列挫し「日付不明」と注記してください。
             当日の記事が 0 件のサイトは "本日の更新なし" と記録してください。
 
             ### CISA KEV
@@ -191,6 +193,6 @@ SkillGroups:
             *このレポートは DailySecurityResearchSummaryAgent により自動生成されました。*
         ChildSkills:
           - GetMonitoredSites
-          - FetchRSSFeed
+          - FetchWebPage
           - FetchCISAKEV
           - FetchTodaysNVDCVEs

@@ -4,100 +4,51 @@ info:
   description: >-
     Combined API specification for DailySecurityResearchFetcher.
     Provides three operations used by DailySecurityResearchSummaryAgent:
-    1. FetchRSSFeed — converts any RSS/Atom feed to JSON via rss2json.com
+    1. FetchWebPage — fetches any RSS/Atom feed or HTML page as readable text via Jina.ai Reader
     2. FetchCISAKEV — retrieves the CISA Known Exploited Vulnerabilities catalog
     3. FetchTodaysNVDCVEs — retrieves CVEs published today from NIST NVD
-  version: "1.0"
+  version: "1.1"
 servers:
-  - url: https://api.rss2json.com/v1
+  - url: https://r.jina.ai
 
 paths:
-  # ── RSS Feed Converter (server: https://api.rss2json.com/v1) ──────────────
-  /api.json:
+  # ── Web Page / RSS Feed Direct Fetch (server: https://r.jina.ai) ──────────────────
+  /{target_url}:
     get:
-      operationId: FetchRSSFeed
-      summary: Fetch and convert an RSS or Atom feed to JSON
+      operationId: FetchWebPage
+      summary: Fetch any RSS/Atom feed or web page as readable text
       description: |
-        Fetches the specified RSS/Atom feed URL and returns its entries as structured JSON.
-        Pass the full public URL of the target RSS feed as rss_url.
-        The response includes a list of items with title, pubDate, link, and description.
-        pubDate format is "YYYY-MM-DD HH:mm:ss" — filter by date prefix to extract today's entries.
-        #ExamplePrompts Fetch the latest items from the Krebs on Security RSS feed
-        #ExamplePrompts Get the latest 20 items from the Dark Reading RSS feed
-        #ExamplePrompts Fetch the CrowdStrike blog RSS feed and return today's articles
+        Fetches any publicly accessible URL (RSS/Atom feed or HTML page) via Jina.ai Reader
+        and returns the content as clean readable text/markdown. Works from server-side without
+        API key. Use this as the PRIMARY method to retrieve all RSS feeds and web pages.
+        For RSS/Atom feed URLs the response includes article titles, publication dates, links,
+        and descriptions in structured text suitable for date-based filtering.
+        For HTML pages the response is clean markdown of the main content.
+        #ExamplePrompts Fetch the Krebs on Security RSS feed
+        #ExamplePrompts Get today's articles from the MSRC blog feed
+        #ExamplePrompts Read the Dark Reading website for today's security news
       parameters:
-        - in: query
-          name: rss_url
-          schema:
-            type: string
+        - in: path
+          name: target_url
           required: true
-          description: >-
-            Full URL of the RSS or Atom feed to fetch.
-            Example: https://krebsonsecurity.com/feed/
-        - in: query
-          name: api_key
+          x-ms-skip-url-encoding: true
           schema:
             type: string
-          required: false
           description: >-
-            Optional rss2json.com API key (paid plan).
-            Do NOT send this parameter unless you have a valid API key — omit it entirely for the free tier.
-            NOTE: The "count" parameter is also a paid feature and is excluded from this spec.
+            Full URL to fetch, including scheme (https://).
+            Example: https://krebsonsecurity.com/feed/
+            Pass the RSS feed URL (url field from config) directly.
       responses:
         "200":
-          description: RSS feed parsed and returned successfully
+          description: Page or feed content returned as readable text/markdown
           content:
-            application/json:
+            text/plain:
               schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    description: '"ok" on success, "error" on failure'
-                  feed:
-                    type: object
-                    properties:
-                      url:
-                        type: string
-                      title:
-                        type: string
-                      link:
-                        type: string
-                      description:
-                        type: string
-                  items:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        title:
-                          type: string
-                        pubDate:
-                          type: string
-                          description: Publication date in "YYYY-MM-DD HH:mm:ss" format (UTC)
-                        link:
-                          type: string
-                        author:
-                          type: string
-                        description:
-                          type: string
-                        content:
-                          type: string
-                        categories:
-                          type: array
-                          items:
-                            type: string
-        "422":
-          description: Feed URL is invalid or could not be parsed
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                  message:
-                    type: string
+                type: string
+                description: >-
+                  Readable text of the fetched page or feed. For RSS/Atom feeds, includes
+                  article titles, publication dates, links and summaries in structured text.
+                  Filter by today's date string (YYYY-MM-DD) to extract today's entries.
 
   # ── CISA KEV (server override: https://www.cisa.gov) ─────────────────────
   /sites/default/files/feeds/known_exploited_vulnerabilities.json:
