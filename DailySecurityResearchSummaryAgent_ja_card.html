@@ -265,8 +265,9 @@
     <div class="internal-name">DailySecurityResearchSummaryAgent</div>
     <div class="description">
       主要セキュリティリサーチャサイトの本日更新コンテンツを毎日自動収集し、
-      重要度別ハイライト・CISA KEV・NIST NVD・サイト別最新情報・推奨アクションを含む
+      重要度別ハイライト・サイト別最新情報・推奨アクションを含む
       日本語の日次セキュリティリサーチ・サマリーレポートを自動生成するエージェント。
+      Jina.ai Reader 経由で RSS フィードを取得（API Key 不要、Azure サーバーからアクセス可能）。
       監視対象サイトは設定プラグインの JSON を編集して再インストールするだけで追加・削除が可能です。
     </div>
   </div>
@@ -279,7 +280,7 @@
     </div>
     <div class="meta-item">
       <span class="icon">⚡</span>
-      <span>Skills: <strong>5</strong></span>
+      <span>Skills: <strong>2</strong></span>
     </div>
     <div class="meta-item">
       <span class="icon">📦</span>
@@ -295,7 +296,7 @@
     </div>
     <div class="meta-item">
       <span class="icon">🌐</span>
-      <span>Sources: <strong>14 active</strong> / 15 total</span>
+      <span>Sources: <strong>12 active</strong> / 12 total</span>
     </div>
   </div>
 
@@ -335,21 +336,21 @@
         <div class="step-num">1</div>
         <div class="step-body">
           <div class="step-title">レポート対象日の決定</div>
-          <div class="step-desc">ReportDate 入力または UTC 本日日付（YYYY-MM-DD）を導出。NVD API 用に ISO 8601 形式の pubStartDate / pubEndDate を準備。</div>
+          <div class="step-desc">ReportDate 入力または UTC 本日日付（YYYY-MM-DD）を導出。</div>
         </div>
       </li>
       <li>
         <div class="step-num">2</div>
         <div class="step-body">
-          <div class="step-title">全ソースを並列フェッチ</div>
-          <div class="step-desc">enabled の全 RSS サイトに FetchRSSFeed を同時並列で実行、FetchCISAKEV・FetchTodaysNVDCVEs も並列起動。フェッチ失敗はスキップして処理継続。</div>
+          <div class="step-title">全 RSS サイトを並列フェッチ</div>
+          <div class="step-desc">enabled の全 RSS サイトに FetchWebPage を Jina.ai Reader 経由で同時並列実行。フェッチ失敗はスキップして処理継続。</div>
         </div>
       </li>
       <li>
         <div class="step-num">3</div>
         <div class="step-body">
           <div class="step-title">当日分コンテンツのフィルタリング</div>
-          <div class="step-desc">RSS: pubDate が本日の記事のみ抽出。CISA KEV: dateAdded == today のエントリ（0 件なら直近 5 件を参考掲載）。NVD: API パラメータ指定済みのため全件使用。</div>
+          <div class="step-desc">返った RSS XML または Jina.ai markdown テキスト中の pubDate / published フィールドから本日分のエントリを抓出。当日内に更新なしのサイトは「本日の更新なし」と記載。</div>
         </div>
       </li>
       <li>
@@ -363,7 +364,7 @@
         <div class="step-num">5</div>
         <div class="step-body">
           <div class="step-title">日本語サマリーレポートの生成</div>
-          <div class="step-desc">重要ハイライト・CISA KEV・NVD・サイト別情報・推奨アクション・統計を含む構造化レポートを OutputLanguage で出力。</div>
+          <div class="step-desc">重要ハイライト・サイト別情報・推奨アクション・統計を含む構造化レポートを OutputLanguage で出力。</div>
         </div>
       </li>
     </ul>
@@ -372,9 +373,7 @@
       <h4 style="font-size: 13px; color: var(--text-secondary); font-weight:600; text-transform:uppercase; letter-spacing:.5px; margin-bottom:8px;">Child Skills</h4>
       <div class="tags-list">
         <span class="tag tag-skill">GetMonitoredSites</span>
-        <span class="tag tag-skill">FetchRSSFeed</span>
-        <span class="tag tag-skill">FetchCISAKEV</span>
-        <span class="tag tag-skill">FetchTodaysNVDCVEs</span>
+        <span class="tag tag-skill">FetchWebPage</span>
       </div>
     </div>
     <div style="margin-top:14px;">
@@ -425,7 +424,7 @@
         <div class="skill-internal">GetMonitoredSites</div>
         <div class="skill-desc">
           監視対象セキュリティリサーチャサイトのリストを JSON 形式で返します。
-          rss_sites（RSS フィード経由）と direct_api_sites（直接 API）の 2 種類を含みます。
+          rss_sites（RSS フィード経由）を含みます。
           enabled: false にするとそのサイトはスキップされます。
         </div>
         <table class="inputs-table">
@@ -444,116 +443,33 @@
     <!-- Plugin 2: Fetcher -->
     <div class="section-title"><span>📡</span> Plugin 2 — DailySecurityResearchFetcher <small style="font-size:13px; font-weight:400; color:var(--text-secondary);">（データ取得プラグイン）</small></div>
     <p style="font-size:12px; color:var(--text-secondary); margin-bottom:16px;">
-      ⚙️ 単一 SkillGroup（<code>openapi_combined.yaml</code>）に 3 API をまとめた構成。Security Copilot は 1 プラグインあたり API SkillGroup を 1 つしかサポートしないため統合済み。
+      ⚙️ Jina.ai Reader (<code>r.jina.ai</code>) を使用。API Key 不要。単一 SkillGroup（<code>openapi_combined.yaml</code>）構成。
     </p>
 
-    <!-- SkillGroup: RSS -->
+    <!-- SkillGroup: FetchWebPage -->
     <div class="skill-group">
       <div class="skill-group-header">
         <span class="format-badge format-api">API</span>
         <div>
-          <div class="group-info">1 skill — rss2json.com（openapi_combined.yaml）</div>
-          <div class="group-desc">任意の RSS/Atom フィードを JSON に変換して返す。無料枠: 1 フィードあたり最新 10 件固定。</div>
+          <div class="group-info">1 skill — Jina.ai Reader（openapi_combined.yaml）</div>
+          <div class="group-desc">任意の RSS/Atom フィードまたは HTML ページを text/plain で返す。API Key 不要。Azure サーバーからアクセス可能。</div>
         </div>
       </div>
       <div class="skill-card">
-        <div class="skill-name">Fetch RSS Feed</div>
-        <div class="skill-internal">FetchRSSFeed</div>
+        <div class="skill-name">Fetch Web Page / RSS Feed</div>
+        <div class="skill-internal">FetchWebPage</div>
         <div class="skill-desc">
-          指定された RSS/Atom フィード URL を rss2json.com 経由で取得し、items 配列として返します。
-          各 item の pubDate は "YYYY-MM-DD HH:mm:ss" 形式 — 本日日付でフィルタリング可能。<br/>
-          <span style="color:#D13438; font-size:12px;">⚠️ <code>count</code> パラメータは有料機能です。API Key なしで送信すると HTTP 422 が返りエージェントが停止するため、OpenAPI spec から除外済みです。無料枠は 1 フィードあたり最新 10 件固定。</span>
+          <code>https://r.jina.ai/{target_url}</code> 経由で指定 URL のコンテンツを取得。
+          RSS/Atom XML フィード URL の場合は XML がそのまま返るため pubDate でフィルタリング可能。
+          HTML ページの場合はクリーンな Markdown 形式で返る。
         </div>
         <table class="inputs-table">
           <thead><tr><th>パラメータ</th><th>説明</th><th>必須</th><th>デフォルト</th></tr></thead>
           <tbody>
             <tr>
-              <td><span class="param-name">rss_url</span><span class="required-marker">*</span></td>
-              <td>取得する RSS/Atom フィードの完全 URL（例: https://krebsonsecurity.com/feed/）</td>
+              <td><span class="param-name">target_url</span><span class="required-marker">*</span></td>
+              <td>取得する URL（例: https://krebsonsecurity.com/feed/）</td>
               <td><strong>Yes</strong></td>
-              <td>—</td>
-            </tr>
-            <tr>
-              <td><span class="param-name">api_key</span></td>
-              <td>rss2json.com API キー（有料プラン。設定時は count も利用可能になる）</td>
-              <td>No</td>
-              <td><span class="default-value">""</span></td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- SkillGroup: CISA KEV -->
-    <div class="skill-group">
-      <div class="skill-group-header">
-        <span class="format-badge format-api">API</span>
-        <div>
-          <div class="group-info">1 skill — CISA KEV API（openapi_combined.yaml）</div>
-          <div class="group-desc">CISA Known Exploited Vulnerabilities カタログを直接取得。</div>
-        </div>
-      </div>
-      <div class="skill-card">
-        <div class="skill-name">Fetch CISA Known Exploited Vulnerabilities</div>
-        <div class="skill-internal">FetchCISAKEV</div>
-        <div class="skill-desc">
-          CISA KEV カタログ全件を JSON で取得します。dateAdded フィールドで本日追加のエントリを抽出。
-          本日追加なしの場合は直近 5 件を参考として表示します。
-        </div>
-        <table class="inputs-table">
-          <thead><tr><th>パラメータ</th><th>説明</th><th>必須</th><th>デフォルト</th></tr></thead>
-          <tbody>
-            <tr>
-              <td colspan="4" style="color:var(--text-secondary); font-style:italic; padding: 10px;">
-                パラメータなし — カタログ全件を取得します
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- SkillGroup: NVD -->
-    <div class="skill-group">
-      <div class="skill-group-header">
-        <span class="format-badge format-api">API</span>
-        <div>
-          <div class="group-info">1 skill — NIST NVD CVE API 2.0（openapi_combined.yaml）</div>
-          <div class="group-desc">指定日に公開された CVE を NVD API から直接取得。</div>
-        </div>
-      </div>
-      <div class="skill-card">
-        <div class="skill-name">Fetch Today's NVD CVEs</div>
-        <div class="skill-internal">FetchTodaysNVDCVEs</div>
-        <div class="skill-desc">
-          指定した日付範囲に NVD へ公開された CVE 一覧を取得します。
-          CVSS スコア・説明・参照リンク・CWE 情報を含みます。
-        </div>
-        <table class="inputs-table">
-          <thead><tr><th>パラメータ</th><th>説明</th><th>必須</th><th>デフォルト</th></tr></thead>
-          <tbody>
-            <tr>
-              <td><span class="param-name">pubStartDate</span><span class="required-marker">*</span></td>
-              <td>検索開始日時 (ISO 8601)。例: 2026-05-09T00:00:00.000</td>
-              <td><strong>Yes</strong></td>
-              <td>—</td>
-            </tr>
-            <tr>
-              <td><span class="param-name">pubEndDate</span><span class="required-marker">*</span></td>
-              <td>検索終了日時 (ISO 8601)。例: 2026-05-09T23:59:59.999</td>
-              <td><strong>Yes</strong></td>
-              <td>—</td>
-            </tr>
-            <tr>
-              <td><span class="param-name">resultsPerPage</span></td>
-              <td>1 ページあたりの結果数（1–2000）</td>
-              <td>No</td>
-              <td><span class="default-value">50</span></td>
-            </tr>
-            <tr>
-              <td><span class="param-name">apiKey</span></td>
-              <td>NVD API キー（オプション。取得: nvd.nist.gov/developers/request-an-api-key）</td>
-              <td>No</td>
               <td>—</td>
             </tr>
           </tbody>
@@ -562,7 +478,7 @@
     </div>
 
     <!-- Monitored Sites -->
-    <div class="section-title"><span>🌐</span> 監視対象サイト（15 ソース / うち 1 無効）</div>
+    <div class="section-title"><span>🌐</span> 監視対象サイト（12 ソース）</div>
     <table class="sites-table">
       <thead>
         <tr>
@@ -606,20 +522,6 @@
         </div>
       </div>
       <div class="report-section-item">
-        <div class="report-emoji">🦠</div>
-        <div class="report-section-body">
-          <div class="report-section-name">CISA Known Exploited Vulnerabilities (KEV)</div>
-          <div class="report-section-desc">本日追加のエントリを表形式で掲載。CVE ID・ベンダー・製品・追加日・期限・ランサムウェア利用情報を含む。</div>
-        </div>
-      </div>
-      <div class="report-section-item">
-        <div class="report-emoji">🆕</div>
-        <div class="report-section-body">
-          <div class="report-section-name">NIST NVD 本日公開 CVE（上位 20 件）</div>
-          <div class="report-section-desc">CVSS スコア降順で最大 20 件。CVE ID・スコア・深刻度・製品・説明を日本語で掲載。</div>
-        </div>
-      </div>
-      <div class="report-section-item">
         <div class="report-emoji">📰</div>
         <div class="report-section-body">
           <div class="report-section-name">サイト別最新情報</div>
@@ -637,7 +539,7 @@
         <div class="report-emoji">📊</div>
         <div class="report-section-body">
           <div class="report-section-name">調査統計</div>
-          <div class="report-section-desc">調査日時・フェッチ成功サイト数・当日更新記事合計・KEV 当日追加・NVD 当日公開 CVE 数・緊急/高リスクアイテム数。</div>
+          <div class="report-section-desc">調査日時・フェッチ成功サイト数・当日更新記事合計・緊急/高リスクアイテム数。</div>
         </div>
       </div>
     </div>
@@ -647,7 +549,7 @@
     <div style="background:var(--bg); border:1px solid var(--border); border-radius:var(--radius); padding:16px 20px;">
       <ol style="padding-left:20px; font-size:14px; line-height:2;">
         <li><strong>openapi_combined.yaml をホスティング</strong> — リポジトリを公開 GitHub に push し、<code>DailySecurityResearchFetcher_ja.yaml</code> 内の <code>&lt;YOUR_ORG&gt;/&lt;YOUR_REPO&gt;</code> を実際の値に置換（参照先: <code>openapi_combined.yaml</code>）</li>
-        <li><strong>⚠️ 要確認 RSS URL を検証</strong> — SANS Newsbites / ScanNetSecurity / Security Memo (kjm) の RSS URL をブラウザで確認</li>
+        <li><strong>⚠️ 要確認 RSS URL を検証</strong> — SANS Newsbites / ScanNetSecurity / Security Memo (kjm) の RSS URL をブラウザで確認（異なる場合は Config YAML の url を更新）</li>
         <li><strong>DailySecurityResearchConfig_ja.yaml</strong> をインストール</li>
         <li><strong>DailySecurityResearchFetcher_ja.yaml</strong> をインストール</li>
         <li><strong>DailySecurityResearchSummaryAgent_ja.yaml</strong> をインストール</li>
