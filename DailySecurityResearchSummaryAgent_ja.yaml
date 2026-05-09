@@ -79,7 +79,6 @@ SkillGroups:
                - target_url: 各サイトの url 値をそのまま渡す（例: https://krebsonsecurity.com/feed/）
                - フェッチに失敗した場合は "データ取得エラー" と記録して処理を継続
             2. direct_api_sites の enabled=true のスキルを並列実行:
-               - FetchCISAKEV（引数なし）
                - FetchTodaysNVDCVEs（pubStartDate と pubEndDate を渡す）
             フェッチに失敗したサイトは "データ取得エラー" として記録し、処理を継続してください。
 
@@ -92,18 +91,13 @@ SkillGroups:
             日付情報が不明な場合は取得できた記事を全件列挫し「日付不明」と注記してください。
             当日の記事が 0 件のサイトは "本日の更新なし" と記録してください。
 
-            ### CISA KEV
-            vulnerabilities から dateAdded == reportDate のエントリを抽出してください。
-            該当エントリが 0 件の場合は、dateAdded の降順で最新 5 件を取得し
-            「参考: 直近の追加（本日追加なし）」として表示してください。
-
             ### NIST NVD
             API レスポンスをそのまま使用します（日付パラメータ指定済み）。
             totalResults が 0 件の場合は "本日の新規 CVE なし" と記録してください。
 
             ## Step 4: 重要度の評価
             以下の基準で各アイテムの重要度を評価してください:
-            - 🔴 緊急/Critical: CVSS スコア 9.0+、積極的悪用確認済み（CISA KEV 当日追加）、ゼロデイ、ランサムウェア関連
+            - 🔴 緊急/Critical: CVSS スコア 9.0+、積極的悪用確認済み、ゼロデイ、ランサムウェア関連
             - 🟠 高/High: CVSS スコア 7.0–8.9、主要製品の RCE・認証バイパス
             - 🟡 中/Medium: CVSS スコア 4.0–6.9、その他の脆弱性・注目すべき脅威情報
             - 🔵 情報/Info: 研究発表・ベストプラクティス・業界動向
@@ -130,14 +124,7 @@ SkillGroups:
             該当アイテムがない場合は「本日の緊急・高リスクアイテムはありません」と記載してください。
 
             ---
-            ## 🦠 CISA Known Exploited Vulnerabilities (KEV)
-            当日追加されたエントリを表形式で記載してください（本日追加なしの場合は直近 5 件を参考として掲載）:
 
-            | CVE ID | ベンダー/製品 | 脆弱性名 | 追加日 | 期限 | ランサムウェア利用 |
-            |--------|-------------|---------|--------|------|-----------------|
-            | CVE-XXXX-XXXXX | Vendor / Product | 脆弱性名 | YYYY-MM-DD | YYYY-MM-DD | Known / Unknown |
-
-            ---
             ## 🆕 NIST NVD 本日公開 CVE（上位 20 件）
             CVSS スコア降順で最大 20 件リストアップしてください:
 
@@ -194,5 +181,4 @@ SkillGroups:
         ChildSkills:
           - GetMonitoredSites
           - FetchWebPage
-          - FetchCISAKEV
           - FetchTodaysNVDCVEs

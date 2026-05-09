@@ -50,62 +50,6 @@ paths:
                   article titles, publication dates, links and summaries in structured text.
                   Filter by today's date string (YYYY-MM-DD) to extract today's entries.
 
-  # ── CISA KEV (server override: https://www.cisa.gov) ─────────────────────
-  /sites/default/files/feeds/known_exploited_vulnerabilities.json:
-    get:
-      operationId: FetchCISAKEV
-      summary: Fetch the full CISA Known Exploited Vulnerabilities catalog
-      description: |
-        Returns the complete CISA KEV catalog as JSON.
-        Filter by dateAdded == today's date (YYYY-MM-DD) to extract newly added entries.
-        If no entries were added today, show the most recently added 5 entries as reference.
-        #ExamplePrompts Get today's CISA Known Exploited Vulnerabilities
-        #ExamplePrompts Fetch the CISA KEV catalog and show entries added today
-      servers:
-        - url: https://www.cisa.gov
-      responses:
-        "200":
-          description: KEV catalog retrieved successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  title:
-                    type: string
-                  catalogVersion:
-                    type: string
-                  dateReleased:
-                    type: string
-                  count:
-                    type: integer
-                  vulnerabilities:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        cveID:
-                          type: string
-                        vendorProject:
-                          type: string
-                        product:
-                          type: string
-                        vulnerabilityName:
-                          type: string
-                        dateAdded:
-                          type: string
-                          description: Date added to KEV catalog (YYYY-MM-DD)
-                        shortDescription:
-                          type: string
-                        requiredAction:
-                          type: string
-                        dueDate:
-                          type: string
-                        knownRansomwareCampaignUse:
-                          type: string
-                        notes:
-                          type: string
-
   # ── NIST NVD CVE API 2.0 (server override: https://services.nvd.nist.gov) ─
   /rest/json/cves/2.0:
     get:

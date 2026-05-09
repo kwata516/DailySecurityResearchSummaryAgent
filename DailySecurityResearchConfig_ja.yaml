@@ -110,11 +110,6 @@ SkillGroups:
               ],
               "direct_api_sites": [
                 {
-                  "name": "CISA Known Exploited Vulnerabilities (KEV)",
-                  "skill": "FetchCISAKEV",
-                  "enabled": true
-                },
-                {
                   "name": "NIST NVD (新規CVE)",
                   "skill": "FetchTodaysNVDCVEs",
                   "enabled": true
