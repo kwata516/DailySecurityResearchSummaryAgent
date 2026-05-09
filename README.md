@@ -122,10 +122,10 @@ Upload to Security Copilot in this order:
 ### Report Output Format
 
 ```
-🛡️ 日次セキュリティリサーチ・サマリー [YYYY年MM月DD日]
+🛡️ 日次セキュリティリサーチ・サマリー [YYYY年MM月DD日 〜 YYYY年MM月DD日]
 ├── ⚡ 重要・緊急ハイライト（🔴 緊急 / 🟠 高 のアイテム、最大 10 件）
 ├── 📰 サイト別最新情報（カテゴリ別: government / vendor / news / blog / ja）
-├── 🎯 本日の推奨アクション（優先度順、最大 5 件）
+├── 🎯 推奨アクション（優先度順、最大 5 件）
 └── 📊 調査統計（fetch statistics）
 ```
 
@@ -151,7 +151,7 @@ After editing, reinstall only `DailySecurityResearchConfig_ja.yaml` — no chang
 
 | Parameter | Required | Default | Description |
 |-----------|----------|---------|-------------|
-| `ReportDate` | No | UTC today | Target date in YYYY-MM-DD format (e.g. `2026-05-09`) |
+| `ReportDate` | No | UTC today | Base date in YYYY-MM-DD format (e.g. `2026-05-09`). The agent surveys this day **and the previous day** (2-day window). |
 | `OutputLanguage` | No | 日本語 | Output language (e.g. `Japanese`, `English`) |
 
 ### License
@@ -166,7 +166,7 @@ MIT License — see [LICENSE](../LICENSE) for details.
 
 ### 概要
 
-主要セキュリティリサーチャサイトの本日更新コンテンツを毎日自動収集し、日本語の日次セキュリティリサーチ・サマリーレポートを生成する Microsoft Security Copilot AIエージェントです。
+主要セキュリティリサーチャサイトの前日・当日更新コンテンツを毎日自動収集し、日本語の日次セキュリティリサーチ・サマリーレポートを生成する Microsoft Security Copilot AIエージェントです。
 
 監視対象サイトは専用の設定プラグイン（`DailySecurityResearchConfig`）で一元管理します。サイトの追加・削除は設定ファイルの JSON を編集して再インストールするだけで反映されます。エージェント本体の変更は不要です。
 
@@ -180,9 +180,9 @@ Security Copilot Agent (DailySecurityResearchSummaryAgent)
 │   └── FetchWebPage               - Jina.ai Reader 経由で任意の RSS/Atom フィードまたは Web ページをテキストで取得
 └── Agent オーケストレーション
     ├── Step 0: GetMonitoredSites でサイト設定を読み込み
-    ├── Step 1: UTC 本日日付を決定
+    ├── Step 1: UTC 本日日付と前日日付を決定
     ├── Step 2: 有効な全 RSS サイトを FetchWebPage で並列フェッチ
-    ├── Step 3: フィードテキストから当日分エントリを抽出
+    ├── Step 3: フィードテキストから前日・当日分エントリを抽出
     ├── Step 4: 各アイテムの重要度を評価
     └── Step 5: 構造化された日本語サマリーレポートを生成
 ```
@@ -278,10 +278,10 @@ Security Copilot に以下の順でアップロードします:
 ### レポート出力形式
 
 ```
-🛡️ 日次セキュリティリサーチ・サマリー [YYYY年MM月DD日]
+🛡️ 日次セキュリティリサーチ・サマリー [YYYY年MM月DD日 〜 YYYY年MM月DD日]
 ├── ⚡ 重要・緊急ハイライト（🔴 緊急 / 🟠 高 のアイテム、最大 10 件）
 ├── 📰 サイト別最新情報（カテゴリ別: government / vendor / news / blog / ja）
-├── 🎯 本日の推奨アクション（優先度順、最大 5 件）
+├── 🎯 推奨アクション（優先度順、最大 5 件）
 └── 📊 調査統計（フェッチ統計）
 ```
 
@@ -307,7 +307,7 @@ Security Copilot に以下の順でアップロードします:
 
 | パラメータ | 必須 | デフォルト | 説明 |
 |-----------|------|---------|------|
-| `ReportDate` | いいえ | UTC 本日 | レポート対象日（YYYY-MM-DD 形式、例: `2026-05-09`） |
+| `ReportDate` | いいえ | UTC 本日 | 調査対象の基準日（YYYY-MM-DD 形式、例: `2026-05-09`）。この日と前日の 2 日間が調査範囲になります。 |
 | `OutputLanguage` | いいえ | 日本語 | 出力言語（例: `日本語`, `English`） |
 
 ### カスタマイズ

@@ -336,7 +336,7 @@
         <div class="step-num">1</div>
         <div class="step-body">
           <div class="step-title">レポート対象日の決定</div>
-          <div class="step-desc">ReportDate 入力または UTC 本日日付（YYYY-MM-DD）を導出。</div>
+          <div class="step-desc">ReportDate 入力または UTC 本日日付（YYYY-MM-DD）を導出。この日と前日の 2 日間が調査対象期間になる。</div>
         </div>
       </li>
       <li>
@@ -350,7 +350,7 @@
         <div class="step-num">3</div>
         <div class="step-body">
           <div class="step-title">当日分コンテンツのフィルタリング</div>
-          <div class="step-desc">返った RSS XML または Jina.ai markdown テキスト中の pubDate / published フィールドから本日分のエントリを抓出。当日内に更新なしのサイトは「本日の更新なし」と記載。</div>
+          <div class="step-desc">返った RSS XML または Jina.ai markdown テキスト中の pubDate / published フィールドから前日・当日分（2 日間）のエントリを抓出。対象期間内に更新なしのサイトは「更新なし」と記載。</div></div>
         </div>
       </li>
       <li>
@@ -525,21 +525,21 @@
         <div class="report-emoji">📰</div>
         <div class="report-section-body">
           <div class="report-section-name">サイト別最新情報</div>
-          <div class="report-section-desc">government / vendor / news / blog / ja のカテゴリ別セクション。当日記事なしのサイトは「本日の更新なし」と 1 行記載。</div>
+          <div class="report-section-desc">government / vendor / news / blog / ja のカテゴリ別セクション。対象期間内に記事なしのサイトは「更新なし」と 1 行記載。</div>
         </div>
       </div>
       <div class="report-section-item">
         <div class="report-emoji">🎯</div>
         <div class="report-section-body">
           <div class="report-section-name">本日の推奨アクション</div>
-          <div class="report-section-desc">当日コンテンツを総合評価した、優先度順の推奨アクション（最大 5 件）。対象製品・CVE・参照リンクを含む。</div>
+          <div class="report-section-desc">調査対象期間（前日・当日）のコンテンツを総合評価した、優先度順の推奨アクション（最大 5 件）。対象製品・CVE・参照リンクを含む。</div>
         </div>
       </div>
       <div class="report-section-item">
         <div class="report-emoji">📊</div>
         <div class="report-section-body">
           <div class="report-section-name">調査統計</div>
-          <div class="report-section-desc">調査日時・フェッチ成功サイト数・当日更新記事合計・緊急/高リスクアイテム数。</div>
+          <div class="report-section-desc">調査期間（前日・当日）・フェッチ成功サイト数・期間内更新記事合計・緊急/高リスクアイテム数。</div>
         </div>
       </div>
     </div>
