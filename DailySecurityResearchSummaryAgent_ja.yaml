@@ -70,17 +70,12 @@ SkillGroups:
             - 指定されていない場合は UTC の今日の日付（YYYY-MM-DD）を導出してください。
             以下の変数を準備します:
             - reportDate: YYYY-MM-DD 形式（例: 2026-05-09）
-            - pubStartDate: YYYY-MM-DDT00:00:00.000 形式（NVD API 用）
-            - pubEndDate:   YYYY-MM-DDT23:59:59.999 形式（NVD API 用）
 
             ## Step 2: 全ソースを並列フェッチ
-            Step 0 で取得した設定に基づき、以下をすべて同時並列で呼び出してください:
-            1. rss_sites の enabled=true の全サイトに対して FetchWebPage を並列実行
-               - target_url: 各サイトの url 値をそのまま渡す（例: https://krebsonsecurity.com/feed/）
-               - フェッチに失敗した場合は "データ取得エラー" と記録して処理を継続
-            2. direct_api_sites の enabled=true のスキルを並列実行:
-               - FetchTodaysNVDCVEs（pubStartDate と pubEndDate を渡す）
-            フェッチに失敗したサイトは "データ取得エラー" として記録し、処理を継続してください。
+            Step 0 で取得した設定に基づき、rss_sites の enabled=true の全サイトに対して
+            FetchWebPage を同時並列で呼び出してください:
+            - target_url: 各サイトの url 値をそのまま渡す（例: https://krebsonsecurity.com/feed/）
+            - フェッチに失敗した場合は "データ取得エラー" と記録して処理を継続。
 
             ## Step 3: 当日分コンテンツのフィルタリング
             ### RSS フィード / Web ページ
@@ -90,10 +85,6 @@ SkillGroups:
             pubDate / published が reportDate（YYYY-MM-DD）で始まるエントリを抽出してください。
             日付情報が不明な場合は取得できた記事を全件列挫し「日付不明」と注記してください。
             当日の記事が 0 件のサイトは "本日の更新なし" と記録してください。
-
-            ### NIST NVD
-            API レスポンスをそのまま使用します（日付パラメータ指定済み）。
-            totalResults が 0 件の場合は "本日の新規 CVE なし" と記録してください。
 
             ## Step 4: 重要度の評価
             以下の基準で各アイテムの重要度を評価してください:
@@ -172,8 +163,6 @@ SkillGroups:
             | 調査日時（UTC） | YYYY-MM-DD HH:MM |
             | フェッチ成功サイト | X / Y サイト |
             | 当日更新記事合計 | XX 件 |
-            | KEV 当日追加 | X 件 |
-            | NVD 当日公開 CVE | XX 件 |
             | 緊急・高リスクアイテム | X 件 |
 
             ---
@@ -181,4 +170,3 @@ SkillGroups:
         ChildSkills:
           - GetMonitoredSites
           - FetchWebPage
-          - FetchTodaysNVDCVEs

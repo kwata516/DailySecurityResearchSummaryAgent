@@ -95,24 +95,11 @@ SkillGroups:
                 },
                 {
                   "name": "ScanNetSecurity",
-                  "url": "https://scan.netsecurity.ne.jp/article/rss/",
+                  "url": "https://scan.netsecurity.ne.jp/rss/index.rdf",
                   "category": "ja",
                   "enabled": true,
                   "_verify": "⚠️ インストール前に https://scan.netsecurity.ne.jp/ でRSSリンクを確認してください"
-                },
-                {
-                  "name": "Security Memo (kjm)",
-                  "url": "https://www.st.ryukoku.ac.jp/~kjm/security/memo/index.rdf",
-                  "category": "ja",
-                  "enabled": true,
-                  "_verify": "⚠️ インストール前に https://www.st.ryukoku.ac.jp/~kjm/security/memo/ でRSSリンクを確認してください"
                 }
               ],
-              "direct_api_sites": [
-                {
-                  "name": "NIST NVD (新規CVE)",
-                  "skill": "FetchTodaysNVDCVEs",
-                  "enabled": true
-                }
-              ]
+              "direct_api_sites": []
             }
